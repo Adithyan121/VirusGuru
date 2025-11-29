@@ -1,0 +1,124 @@
+/* Layout */
+.scanner-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+  background: #0c0c18;
+  color: #fff;
+  min-height: 100vh;
+}
+
+/* Score Card */
+.score-card {
+  background: #151525;
+  padding: 20px;
+  border-radius: 15px;
+  width: 280px;
+  text-align: center;
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 5px solid #ff4e4e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin: auto;
+  font-size: 28px;
+}
+
+.score-label {
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+/* Main Card */
+.result-card {
+  background: #151525;
+  padding: 20px;
+  border-radius: 15px;
+  flex: 1;
+  min-width: 300px;
+}
+
+.result-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.flagged-text {
+  color: #ff4e4e;
+  margin-top: 10px;
+}
+
+/* Tags */
+.tags {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.tags span {
+  background: #1e1e30;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* Table */
+.vendor-table {
+  margin-top: 20px;
+  border-top: 1px solid #333;
+}
+
+.vendor-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  padding: 10px 0;
+  border-bottom: 1px solid #222;
+}
+
+.vendor-row.header {
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+/* Status Colors */
+.status {
+  padding: 5px 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.status.malicious {
+  color: #ff4e4e;
+}
+
+.status.phishing {
+  color: #ff884e;
+}
+
+.status.undetected {
+  color: #4eff89;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scanner-container {
+    flex-direction: column;
+  }
+
+  .vendor-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .score-card {
+    width: 100%;
+  }
+}
