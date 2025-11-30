@@ -55,13 +55,15 @@ const Abt = () => {
         <div
           className="card"
           style={{
-            backgroundColor: "rgba(30, 30, 30, 0.85)", // Slightly darker/more opaque
-            backdropFilter: "blur(10px)", // Glassmorphism
-            borderRadius: "16px",
+            // backgroundColor: "rgba(30, 30, 30, 0.85)",
+            backgroundColor: "transparent",
+            // backdropFilter: "blur(10px)",
+            // borderRadius: "16px",
             padding: "40px",
-            color: "#f0f0f0",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+            // color: "#f0f0f0",
+            // border: "1px solid rgba(255, 255, 255, 0.1)",
+            border: "none",
+            // boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
             fontFamily: "'Inter', sans-serif"
           }}
         >
@@ -69,7 +71,8 @@ const Abt = () => {
             textAlign: "center",
             marginBottom: "30px",
             fontSize: "2.5rem",
-            background: "linear-gradient(45deg, #007bff, #00d2ff)",
+            // background: "linear-gradient(45deg, #007bff, #00d2ff)",
+            background: "linear-gradient(45deg, #ffffffff, #ffffffff)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             fontWeight: "700"
@@ -78,7 +81,7 @@ const Abt = () => {
           </h2>
 
           <section style={{ marginBottom: "30px" }}>
-            <h3 style={{ color: "#00d2ff", marginBottom: "15px", fontSize: "1.5rem" }}>What is VirusGuru?</h3>
+            <h3 style={{ color: "#ffffffff", marginBottom: "15px", fontSize: "1.5rem" }}>What is VirusGuru?</h3>
             <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#ccc" }}>
               VirusGuru is an advanced threat-analysis platform designed to help you quickly identify
               whether digital content is safe. With support for URL, IP address, domain, and file
@@ -88,7 +91,7 @@ const Abt = () => {
           </section>
 
           <section style={{ marginBottom: "30px" }}>
-            <h3 style={{ color: "#00d2ff", marginBottom: "15px", fontSize: "1.5rem" }}>What VirusGuru Can Scan</h3>
+            <h3 style={{ color: "#ffffffff", marginBottom: "15px", fontSize: "1.5rem" }}>What VirusGuru Can Scan</h3>
             <ul style={{ listStyle: "none", padding: 0, fontSize: "1.1rem", lineHeight: "1.8", color: "#ccc" }}>
               <li style={{ marginBottom: "10px" }}><strong style={{ color: "#fff" }}>• URLs:</strong> Detect malicious websites, phishing pages, and dangerous redirects.</li>
               <li style={{ marginBottom: "10px" }}><strong style={{ color: "#fff" }}>• IP Addresses:</strong> Identify suspicious or compromised servers and unsafe network sources.</li>
@@ -98,7 +101,7 @@ const Abt = () => {
           </section>
 
           <section style={{ marginBottom: "30px" }}>
-            <h3 style={{ color: "#00d2ff", marginBottom: "15px", fontSize: "1.5rem" }}>Why VirusGuru?</h3>
+            <h3 style={{ color: "#ffffffff", marginBottom: "15px", fontSize: "1.5rem" }}>Why VirusGuru?</h3>
             <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#ccc" }}>
               Threats on the internet evolve every day. A harmless-looking link can lead to data theft,
               device compromise, or financial loss. VirusGuru provides a fast and reliable way to verify
@@ -107,7 +110,7 @@ const Abt = () => {
           </section>
 
           <section style={{ marginBottom: "30px" }}>
-            <h3 style={{ color: "#00d2ff", marginBottom: "15px", fontSize: "1.5rem" }}>How VirusGuru Helps You</h3>
+            <h3 style={{ color: "#ffffffff", marginBottom: "15px", fontSize: "1.5rem" }}>How VirusGuru Helps You</h3>
             <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#ccc" }}>
               Whether you're checking a forwarded message, an email link, an unknown IP address, or a
               file hash, VirusGuru offers instant, clear results. Our platform is beginners-friendly and
@@ -117,7 +120,7 @@ const Abt = () => {
           </section>
 
           <section style={{ marginBottom: "30px" }}>
-            <h3 style={{ color: "#00d2ff", marginBottom: "15px", fontSize: "1.5rem" }}>Official Telegram Bot</h3>
+            <h3 style={{ color: "#ffffffff", marginBottom: "15px", fontSize: "1.5rem" }}>Official Telegram Bot</h3>
             <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#ccc", marginBottom: "20px" }}>
               Stay protected wherever you are. With our official Telegram bot, you can automatically scan
               URLs, domains, and IP addresses directly from your chats—no need to copy and paste into a browser.
@@ -154,7 +157,7 @@ const Abt = () => {
           </section>
 
           <section>
-            <h3 style={{ color: "#00d2ff", marginBottom: "15px", fontSize: "1.5rem" }}>About the Creator</h3>
+            <h3 style={{ color: "#ffffffff", marginBottom: "15px", fontSize: "1.5rem" }}>About the Creator</h3>
             <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#ccc" }}>
               VirusGuru was built with a dedication to cybersecurity and a vision of making the internet
               safer for everyone. By providing powerful scanning tools in a simple interface, the project

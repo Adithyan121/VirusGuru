@@ -97,3 +97,55 @@
   box-sizing: border-box;
   z-index: 1;
 }
+
+/* Responsive adjustments for Url page */
+.url-card {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 30px;
+  background-color: transparent;
+  border-radius: 12px;
+  text-align: center;
+  color: #e0e0e0;
+  border: none;
+}
+
+.url-input {
+  flex: 1 1 300px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  min-width: 200px;
+  background-color: transparent;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 20px 10px;
+    /* Reduce padding on mobile */
+  }
+
+  .url-card {
+    padding: 20px 10px;
+    /* Reduce card padding on mobile */
+  }
+
+  .url-input {
+    min-width: 100%;
+    /* Allow input to shrink */
+    flex: 1 1 100%;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}

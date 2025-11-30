@@ -2,179 +2,265 @@ const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 require('dotenv').config();
 
-// Replace with your own tokens from .env
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const VIRUSTOTAL_API_KEY = process.env.VIRUSTOTAL_API_KEY;
+// Configuration
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const vtKey = process.env.VIRUSTOTAL_API_KEY;
 
-// Create bot instance
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
-
-// Send a welcome message on /start command
-bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-
-  const welcomeMessage =
-    `👋 Hello! Welcome to the VirusTotal Scanner Bot.\n\n` +
-    `🛡️ This bot scans URLs or file hashes (SHA256/MD5) using the VirusTotal API and returns threat detection details.\n\n` +
-    // `👨‍💻 *Developer:* Adithyan G\n` +
-    // `☕️ *Buy me a coffee:*kkk\n` +
-    // `🌐 *Website:* ${process.env.WEBSITE_URL}\n\n` +
-    `To use, just send me a URL or file hash, and I'll fetch the VirusTotal scan report for you!`;
-
-  bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'Markdown' });
-});
-
-
-// VirusTotal API base URL
+// Initialize Bot
+const bot = new TelegramBot(token, { polling: true });
 const VT_API_BASE = 'https://www.virustotal.com/api/v3';
 
-// Helper: Escape Markdown special characters for Telegram
-function escapeMarkdown(text) {
-  if (!text) return '';
-  return text.replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1');
+// ------------------------------------------------------------------
+// 1. VISUAL ASSETS (ASCII ART)
+// ------------------------------------------------------------------
+// Note: Backslashes are escaped (\\) for JS, and we will escape HTML later.
+
+const ART = {
+    SAFE: 
+`  ______    ______   ________  ________ 
+ /      \\  /      \\ /        |/        |
+/$$$$$$  |/$$$$$$  |$$$$$$$$/ $$$$$$$$/ 
+$$ \\__$$/ $$ |__$$ |$$ |__    $$ |__    
+$$      \\ $$    $$ |$$    |   $$    |   
+ $$$$$$  |$$$$$$$$ |$$$$$/    $$$$$/    
+/  \\__$$ |$$ |  $$ |$$ |      $$ |_____ 
+$$    $$/ $$ |  $$ |$$ |      $$       |
+ $$$$$$/  $$/   $$/ $$/       $$$$$$$$/ `,
+
+    THREAT: 
+` _______    ______   __    __   ______   ________  _______  
+/       \\  /      \\ /  \\  /  | /      \\ /        |/       \\ 
+$$$$$$$  |/$$$$$$  |$$  \\ $$ |/$$$$$$  |$$$$$$$$/ $$$$$$$  |
+$$ |  $$ |$$ |__$$ |$$$  \\$$ |$$ | _$$/ $$ |__    $$ |__$$ |
+$$ |  $$ |$$    $$ |$$$$  $$ |$$ |/    |$$    |   $$    $$< 
+$$ |  $$ |$$$$$$$$ |$$ $$ $$ |$$ |$$$$ |$$$$$/    $$$$$$$  |
+$$ |__$$ |$$ |  $$ |$$ |$$$$ |$$ \\__$$ |$$ |_____ $$ |  $$ |
+$$    $$/ $$ |  $$ |$$ | $$$ |$$    $$/ $$       |$$ |  $$ |
+$$$$$$$/  $$/   $$/ $$/   $$/  $$$$$$/  $$$$$$$$/ $$/   $$/ `,
+
+    UNKNOWN:
+` __    __  __    __  __    __  __    __   ______   __       __  __    __ 
+/  |  /  |/  \\  /  |/  |  /  |/  \\  /  | /      \\ /  |  _  /  |/  \\  /  |
+$$ |  $$ |$$  \\ $$ |$$ | /$$/ $$  \\ $$ |/$$$$$$  |$$ | / \\ $$ |$$  \\ $$ |
+$$ |  $$ |$$$  \\$$ |$$ |/$$/  $$$  \\$$ |$$ |  $$ |$$ |/$  \\$$ |$$$  \\$$ |
+$$ |  $$ |$$$$  $$ |$$  $$<   $$$$  $$ |$$ |  $$ |$$ /$$$  $$ |$$$$  $$ |
+$$ |  $$ |$$ $$ $$ |$$$$$  \\  $$ $$ $$ |$$ |  $$ |$$ $$/$$ $$ |$$ $$ $$ |
+$$ \\__$$ |$$ |$$$$ |$$ |$$  \\ $$ |$$$$ |$$ \\__$$ |$$$$/  $$$$ |$$ |$$$$ |
+$$    $$/ $$ | $$$ |$$ | $$  |$$ | $$$ |$$    $$/ $$$/    $$$ |$$ | $$$ |
+ $$$$$$/  $$/   $$/ $$/   $$/ $$/   $$/  $$$$$$/  $$/      $$/ $$/   $$/ `
+};
+
+// ------------------------------------------------------------------
+// 2. HELPER FUNCTIONS
+// ------------------------------------------------------------------
+
+// Escape HTML to prevent Telegram errors
+function escapeHtml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
-// Helper to query VirusTotal API for URL or file hash
+function isValidUrl(text) {
+    try { new URL(text); return true; } catch { return false; }
+}
+
+function isValidHash(text) {
+    return /^[a-fA-F0-9]{32}$/.test(text) || 
+           /^[a-fA-F0-9]{40}$/.test(text) || 
+           /^[a-fA-F0-9]{64}$/.test(text);
+}
+
+function getVTGuiLink(type, id) {
+    if (type === 'url') return `https://www.virustotal.com/gui/url/${id}`;
+    if (type === 'file') return `https://www.virustotal.com/gui/file/${id}`;
+    return 'https://www.virustotal.com/gui/';
+}
+
+// Generates a visual progress bar: [████░░░░░░] 40%
+function getProgressBar(value, total, length = 8) {
+    const percentage = Math.min(Math.max(value / total, 0), 1);
+    const fill = Math.round(length * percentage);
+    const empty = length - fill;
+    const bar = '█'.repeat(fill) + '░'.repeat(empty);
+    return `[${bar}] ${Math.round(percentage * 100)}%`;
+}
+
+// ------------------------------------------------------------------
+// 3. API HANDLER
+// ------------------------------------------------------------------
+
 async function getVirusTotalReport(query) {
-  let url;
-
-  // Determine if query is a URL or a hash
-  if (query.match(/^https?:\/\//i)) {
-    // URL scan - Encode URL to base64url as per VT v3 spec
-    const encodedUrl = Buffer.from(query)
-      .toString('base64')
-      .replace(/=+$/, '')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_');
-    url = `${VT_API_BASE}/urls/${encodedUrl}`;
-  } else {
-    // Assume it's a file hash (SHA256, SHA1, MD5)
-    url = `${VT_API_BASE}/files/${query}`;
-  }
-
-  try {
-    const response = await axios.get(url, {
-      headers: { 'x-apikey': VIRUSTOTAL_API_KEY },
-    });
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      return { error: error.response.data.error.message || 'API Error' };
+    let url;
+    
+    // Determine if URL or Hash
+    if (isValidUrl(query)) {
+        const encodedUrl = Buffer.from(query).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+        url = `${VT_API_BASE}/urls/${encodedUrl}`;
+    } else {
+        url = `${VT_API_BASE}/files/${query}`;
     }
-    return { error: error.message };
-  }
+
+    try {
+        const response = await axios.get(url, {
+            headers: { 'x-apikey': vtKey }
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response) {
+            return { error: error.response.data.error.message || 'Analysis not found.' };
+        }
+        return { error: error.message };
+    }
 }
+
+// ------------------------------------------------------------------
+// 4. FORMATTING LOGIC
+// ------------------------------------------------------------------
 
 function formatReportMessage(data) {
-  if (!data || data.error) {
-    return `Error fetching report: ${escapeMarkdown(data.error || 'Unknown error')}`;
-  }
-
-  const attr = data.data.attributes;
-  const stats = attr.last_analysis_stats || {};
-  const results = attr.last_analysis_results || {};
-
-  let maliciousThreats = [];
-  for (const [vendor, result] of Object.entries(results)) {
-    if (result.category === 'malicious' || result.category === 'phishing') {
-      maliciousThreats.push(`${vendor}: ${result.category} (${result.result || 'detected'})`);
+    // A. Handle Errors
+    if (!data || data.error) {
+        return {
+            text: `<b>🚫 SYSTEM ERROR</b>\n<code>${escapeHtml(data.error)}</code>`,
+            options: { parse_mode: 'HTML' }
+        };
     }
-  }
 
-  let communityScore = attr.reputation !== undefined ? attr.reputation : 'N/A';
-  const servingIpAddress =
-    attr.network_addresses
-      ? attr.network_addresses.join(', ')
-      : attr.serving_ips?.join(', ') || 'N/A';
-  const bodySha256 = attr.sha256 || 'N/A';
-  const server = attr.http_response_headers?.Server || 'N/A';
-  const lastSubmitted = attr.last_submission_date
-    ? new Date(attr.last_submission_date * 1000).toLocaleString()
-    : 'N/A';
+    const attr = data.data.attributes;
+    const stats = attr.last_analysis_stats || {};
+    const type = data.data.type;
+    const id = data.data.id;
 
-  let message = '';
+    // B. Analyze Stats
+    const malicious = stats.malicious || 0;
+    const suspicious = stats.suspicious || 0;
+    const totalEngines = (stats.harmless || 0) + (stats.undetected || 0) + malicious + suspicious;
 
-  if (data.data.type === 'url') {
-    message += `🔗 *URL:* ${escapeMarkdown(attr.url)}\n\n`;
-  } else if (data.data.type === 'file') {
-    message += `🗂️ *File Hash (SHA256):* ${escapeMarkdown(bodySha256)}\n\n`;
-  }
+    // C. Determine Theme (Safe vs Danger)
+    let asciiArt = ART.SAFE;
+    let headerText = "SYSTEM_SECURE";
+    let statusIcon = "🟢"; 
 
-  message += `*Detection Stats:*\n` +
-    `  ┌───────────────┐\n` +
-    `  │ Malicious   : ${stats.malicious || 0}\n` +
-    `  │ Suspicious  : ${stats.suspicious || 0}\n` +
-    `  │ Undetected  : ${stats.undetected || 0}\n` +
-    `  │ Harmless    : ${stats.harmless || 0}\n` +
-    `  └───────────────┘\n\n`;
+    if (malicious > 0) {
+        asciiArt = ART.THREAT;
+        headerText = "THREAT_DETECTED";
+        statusIcon = "🔴";
+    } else if (suspicious > 0) {
+        asciiArt = ART.UNKNOWN;
+        headerText = "SUSPICIOUS_ACTIVITY";
+        statusIcon = "🟠";
+    }
 
-  message += `*Community Score:* ${communityScore}\n\n`;
+    // D. Build the Message
+    let msg = `<b>${statusIcon} SCAN COMPLETED: ${headerText}</b>\n`;
+    
+    // *** FIX IS HERE: We must escape the ASCII art too! ***
+    msg += `<pre>${escapeHtml(asciiArt)}</pre>\n`;
 
-  if (maliciousThreats.length > 0) {
-    message += `⚠️ *Warning:* This link has threats detected!\n\n`;
-    message += `*Malicious Threats Detected:*\n`;
-    message += maliciousThreats
-      .map(t => `- 🔴 *${escapeMarkdown(t)}*`)
-      .join('\n') + '\n\n';
-  } else {
-    message += `✅ *This link is safe to use. No threats detected.*\n\n`;
-  }
+    // Start the "Terminal Box"
+    msg += `<code>┌──────────────────────────────</code>\n`;
 
-  message += `*Additional Details:*\n` +
-    `  - Serving IP Address : ${escapeMarkdown(servingIpAddress)}\n` +
-    `  - Server Header     : ${escapeMarkdown(server)}\n` +
-    `  - Last Submission   : ${escapeMarkdown(lastSubmitted)}\n`;
+    // 1. Target Details
+    const targetName = type === 'url' ? 'URL' : 'FILE';
+    msg += `<code>│ 🎯 TYPE    : </code><b>${targetName}</b>\n`;
+    
+    if (type === 'url') {
+        const displayUrl = attr.url.length > 25 ? attr.url.substring(0, 22) + '...' : attr.url;
+        msg += `<code>│ 🔗 LINK    : ${escapeHtml(displayUrl)}</code>\n`;
+    } else {
+        msg += `<code>│ 📁 HASH    : ${escapeHtml(attr.sha256.substring(0, 10))}...</code>\n`;
+    }
+    
+    // 2. Detection Data
+    const threatBar = getProgressBar(malicious, totalEngines || 1);
+    msg += `<code>│</code>\n`;
+    msg += `<code>│ 📊 RATIO   : ${malicious}/${totalEngines} Engines</code>\n`;
+    msg += `<code>│ ☢️ THREAT  : ${threatBar}</code>\n`;
+    
+    // 3. Metadata
+    const scanDate = attr.last_submission_date 
+        ? new Date(attr.last_submission_date * 1000).toISOString().split('T')[0] 
+        : 'N/A';
+    msg += `<code>│</code>\n`;
+    msg += `<code>│ 📅 DATE    : ${scanDate}</code>\n`;
+    msg += `<code>└──────────────────────────────</code>\n\n`;
 
-  return message;
+    // 4. MALICIOUS WARNING SECTION
+    if (malicious > 0) {
+        const results = attr.last_analysis_results || {};
+        let threats = [];
+        for (const [vendor, result] of Object.entries(results)) {
+            if (result.category === 'malicious' || result.category === 'phishing') {
+                threats.push(vendor);
+            }
+        }
+        const topThreats = threats.slice(0, 3).join(', ');
+        const extra = threats.length > 3 ? `(+${threats.length - 3})` : '';
+        
+        msg += `<b>⚠️ MALICIOUS THREATS DETECTED:</b>\n`;
+        msg += `<i>This link has been confirmed as dangerous by ${malicious} security vendors. Do not click.</i>\n\n`;
+        
+        msg += `<b>🚩 DETECTED BY:</b>\n`;
+        msg += `<code>> ${escapeHtml(topThreats)} ${extra}</code>\n\n`;
+    }
+
+    msg += `<i>Select an option below:</i>`;
+
+    const options = {
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '🔍 View Full Analysis', url: getVTGuiLink(type, id) }
+                ]
+            ]
+        }
+    };
+
+    return { text: msg, options: options };
 }
 
+// ------------------------------------------------------------------
+// 5. BOT LISTENERS
+// ------------------------------------------------------------------
 
-// Telegram message handler
-// Simple regex to validate URL
-function isValidUrl(text) {
-  try {
-    new URL(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Simple regex for hex hashes (MD5=32, SHA1=40, SHA256=64)
-function isValidHash(text) {
-  return /^[a-fA-F0-9]{32}$/.test(text) ||  // MD5
-    /^[a-fA-F0-9]{40}$/.test(text) ||  // SHA1
-    /^[a-fA-F0-9]{64}$/.test(text);    // SHA256
-}
-
-// Modify message handler:
-// Add this inside your bot.on('message') handler
-
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text?.trim();
-
-  if (!text) return;
-
-  // If message is a command (starts with '/'), handle separately
-  if (text.startsWith('/')) {
-    // /start is handled by bot.onText above, but we can keep a fallback here or remove it.
-    // The previous code had it inside here, let's keep it consistent with the original working version.
-    return;
-  }
-
-  // If not a command, validate input
-  if (!isValidUrl(text) && !isValidHash(text)) {
-    return bot.sendMessage(chatId, '❗ Please send a valid URL starting with http/https or a valid file hash (MD5, SHA1, or SHA256).');
-  }
-
-  await bot.sendMessage(chatId, '🔎 Scanning, please wait...');
-
-  const report = await getVirusTotalReport(text);
-
-  const replyMessage = formatReportMessage(report);
-
-  bot.sendMessage(chatId, replyMessage, { parse_mode: 'Markdown' });
+bot.onText(/\/start/, (msg) => {
+    const welcome = 
+        `<code>[ SYSTEM ONLINE ]</code>\n\n` +
+        `👋 <b>Welcome to VT Scanner.</b>\n` +
+        `Send a <b>URL</b> or <b>File Hash</b> to initiate a threat scan.\n\n` +
+        `<i>Powered by VirusTotal API</i>`;
+    
+    bot.sendMessage(msg.chat.id, welcome, { parse_mode: 'HTML' });
 });
 
-console.log('Telegram VirusTotal bot started...');
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text?.trim();
+
+    if (!text || text.startsWith('/')) return;
+
+    if (!isValidUrl(text) && !isValidHash(text)) {
+        return bot.sendMessage(chatId, '<code>[!] ERROR: Invalid Target. Send URL or Hash.</code>', { parse_mode: 'HTML' });
+    }
+
+    const loadingMsg = await bot.sendMessage(chatId, '<code>[ SYSTEM ] > INITIATING SCAN...</code>', { parse_mode: 'HTML' });
+
+    const data = await getVirusTotalReport(text);
+    const response = formatReportMessage(data);
+
+    try {
+        await bot.deleteMessage(chatId, loadingMsg.message_id);
+    } catch (e) {
+        // Ignored
+    }
+
+    bot.sendMessage(chatId, response.text, response.options);
+});
+
+console.log('🤖 Cyber-Security Bot Started...');
