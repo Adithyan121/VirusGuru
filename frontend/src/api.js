@@ -11,3 +11,8 @@ export const getAnalysis = async (id) => {
     const response = await axios.get(`${API_BASE_URL}/analyses/${id}`);
     return response.data;
 };
+
+export const lookupFile = async (hash) => {
+    const response = await axios.get(`${API_BASE_URL}/files/${hash}`);
+    return response.data;
+};

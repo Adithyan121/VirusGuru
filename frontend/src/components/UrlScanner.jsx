@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { scanUrl as apiScanUrl, getAnalysis } from "../api";
 import search_logo from '../assets/search.png';
 
 const UrlScanner = () => {
@@ -7,30 +7,26 @@ const UrlScanner = () => {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const scanUrl = async () => {
+  const handleScan = async () => {
     setLoading(true);
     setResult(null);
 
     try {
       // 1️⃣ Request scan
-      const submitRes = await axios.post(
-        "http://localhost:5000/api/urls/scan",
-        { url }
-      );
+      // 1️⃣ Request scan
+      const submitData = await apiScanUrl(url);
 
-      const analysisId = submitRes.data.data.id;
+      const analysisId = submitData.data.id;
 
       // 2️⃣ Poll until analysis completes
       let scanCompleted = false;
       let finalReport = null;
 
       while (!scanCompleted) {
-        const reportRes = await axios.get(
-          `http://localhost:5000/api/analyses/${analysisId}`
-        );
+        const reportData = await getAnalysis(analysisId);
 
-        const status = reportRes.data.data.attributes.status;
-        finalReport = reportRes.data;
+        const status = reportData.data.attributes.status;
+        finalReport = reportData;
 
         if (status === "completed") {
           scanCompleted = true;
@@ -185,7 +181,7 @@ const UrlScanner = () => {
         />
 
         <button
-          onClick={scanUrl}
+          onClick={handleScan}
           style={{ padding: "10px 20px" }}
         >
           Scan URL
