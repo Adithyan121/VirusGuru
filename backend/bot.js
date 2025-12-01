@@ -232,7 +232,7 @@ function formatReportMessage(data) {
 bot.onText(/\/start/, (msg) => {
     const welcome = 
         `<code>[ SYSTEM ONLINE ]</code>\n\n` +
-        `👋 <b>Welcome to VT Scanner.</b>\n` +
+        `👋 <b>Welcome to VirusGuru.</b>\n` +
         `Send a <b>URL</b> or <b>File Hash</b> to initiate a threat scan.\n\n` +
         `<i>Powered by VirusTotal API</i>`;
     
